@@ -9,7 +9,10 @@ import GenerateImages from './pages/GenerateImages.jsx'
 import RemoveBackground from './pages/RemoveBackground.jsx'
 import RemoveObjects from './pages/RemoveObjects.jsx'
 import ReviewResume from './pages/ReviewResume.jsx'
+import HealthAssistant from './pages/HealthAssistant.jsx'
+import StudyAssistant from './pages/StudyAssistant.jsx'
 import Community from './pages/Community.jsx'
+
 
 const App = () => {
   return (
@@ -24,6 +27,8 @@ const App = () => {
           <Route path='remove-background' element={<RemoveBackground />} />
           <Route path='remove-objects' element={<RemoveObjects />} />
           <Route path='review-resume' element={<ReviewResume />} />
+          <Route path='health-assistant' element={<HealthAssistant />} />
+          <Route path='study-assistant' element={<StudyAssistant />} />
           <Route path='community' element={<Community />} />
         </Route>
       </Routes>
