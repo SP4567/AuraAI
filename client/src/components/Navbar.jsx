@@ -1,6 +1,6 @@
 import React from 'react'
 // import assets from '../assets/assets'
-import image from '../assets/logobackgr.png'
+import image from '../assets/logoImage.png'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight } from 'lucide-react'
 import {useClerk, UserButton, useUser} from '@clerk/clerk-react'
@@ -11,7 +11,7 @@ const Navbar = () => {
     const {openSignIn} = useClerk();
   return (
     <div className='fixed z-5 w-full backdrop:blur-2xl flex justify-between items-center px-4 py-3 sm:px-20 xl:px-32 cursor-pointer'>
-      <img src={image} alt="logo" className='w-32 sm:w-50' onClick={() => navigate('/')} />
+      <img src={image} alt="logo" className='w-32 sm:w-30' onClick={() => navigate('/')} />
       {
         user ? <UserButton />
         :
@@ -24,5 +24,4 @@ const Navbar = () => {
     </div>
   )
 }
-
 export default Navbar

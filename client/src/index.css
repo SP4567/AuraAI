@@ -14,3 +14,7 @@ body{
   background-size: cover;
   background-repeat: no-repeat;
 } */
+
+.reset-tw,. .reset-tw *{
+  all: revert !important
+}
