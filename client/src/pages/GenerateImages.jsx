@@ -5,6 +5,7 @@ const GenerateImages = () => {
 
   const imageStyle = ['Realistic', 'Ghibli Style', 'Anime Style', 'Cartoon Style', 'Fantasy Style', 'Realistic Style', '3D Style', 'Portrait Style']
   const [selectType, setSelectType] = useState('Realistic')
+  const [publish, setPublish] = useState(false)
   const [input, setInput] = useState('')
   const onSubmitHandler = async (e) => {
     e.preventDefault();
@@ -18,16 +19,28 @@ const GenerateImages = () => {
           <h1 className='text-xl font-semibold'>AI Image Generator</h1>
         </div>
         <p className='mt-6 text-sm font-medium'>Describe your image</p>
-        <textarea onChange={(e) => setInput(e.target.value)} value={input} type="text" className='w-full p-2 px-3 mt-2 outline-none text-sm rounded-md border border=gray-300' placeholder='Describe the image you want to generate.' required/>
+        <textarea rows={4} onChange={(e) => setInput(e.target.value)} value={input} type="text" className='w-full p-2 px-3 mt-2 outline-none text-sm rounded-md border border=gray-300' placeholder='Describe the image you want to generate.' required/>
         <p className='mt-4 text-sm font-medium'>
           Style
         </p>
         <div className='mt-3 flex gap-3 flex-wrap sm:max-w-9/11'>
-          {imageStyle.map((item, index)=>(
-            <span onClick={() => setSelectType(item)} className={`text=xs px-4 py-1 border rounded-full cursor-pointer ${selectType === item ? 'bg-green-50 text-green-700' : 'text-gray-500 border-gray-300'}`} key={index}>{item}</span>
+          {imageStyle.map((item)=>(
+            <span onClick={() => setSelectType(item)} className={`text-xs px-4 py-1 border rounded-full cursor-pointer ${selectType === item ? 'bg-green-50 text-green-700' : 'text-gray-500 border-gray-300'}`} key={item}>{item}</span>
           ))}
         </div>
-        <br />
+        <div className='my-6 flex items-center gap-2'>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              onChange={(e) => setPublish(e.target.checked)} 
+              checked={publish} 
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-300 rounded-full peer-checked:bg-green-500 transition-all"></div>
+            <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-all peer-checked:translate-x-5"></span>
+          </label>
+          <p>Make this image public</p>
+        </div>
         <button className='w-full flex justify-center items-center gap-2 bg-gradient-to-r from-[#248D27] to-[#52C755] text-white px-4 py-2 mt-6 text-sm rounded-lg cursor-pointer'>
           <Image className='w-5' />Generate Image
         </button>

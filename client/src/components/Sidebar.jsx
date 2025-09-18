@@ -12,7 +12,9 @@ import {
   Stethoscope, 
   Book, 
   LogOut, 
-  User 
+  User, 
+  PanelsTopLeft,
+  Users
 } from 'lucide-react'
 
 const navItems = [
@@ -25,6 +27,7 @@ const navItems = [
   { to: '/ai/review-resume', label: 'Review Resume', Icon: FileText },
   { to: '/ai/health-assistant', label: 'Health Assistant', Icon: Stethoscope },
   { to: '/ai/study-assistant', label: 'Study Assistant', Icon: Book },
+  { to: '/ai/community', label: 'Community', Icon: Users},
 ]
 
 const Sidebar = ({ sidebar, setSidebar }) => {
@@ -57,7 +60,7 @@ const Sidebar = ({ sidebar, setSidebar }) => {
             end={to === '/ai'}
             onClick={() => setSidebar(false)}
             className={({ isActive }) =>
-              `px-3.5 py-2.5 flex items-center gap-3 rounded transition-colors ${
+              `px-3.5 py-4 flex items-center gap-3 rounded transition-colors ${
                 isActive
                   ? 'bg-gradient-to-r from-[#3C81F6] to-[#9234EA] text-white'
                   : 'text-gray-700 hover:bg-gray-100'

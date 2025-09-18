@@ -15,6 +15,6 @@ body{
   background-repeat: no-repeat;
 } */
 
-.reset-tw,. .reset-tw *{
+.reset-tw, .reset-tw *{
   all: revert !important
 }
