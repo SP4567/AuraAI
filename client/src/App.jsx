@@ -12,9 +12,15 @@ import ReviewResume from './pages/ReviewResume.jsx'
 import HealthAssistant from './pages/HealthAssistant.jsx'
 import StudyAssistant from './pages/StudyAssistant.jsx'
 import Community from './pages/Community.jsx'
+import { useAuth } from '@clerk/clerk-react'
+import { useEffect } from 'react'
 
 
 const App = () => {
+  const {getToken} = useAuth()
+  useEffect(()=>{
+    getToken().then((token)=>console.log(token))
+  }, [])
   return (
     <div>
       <Routes>
