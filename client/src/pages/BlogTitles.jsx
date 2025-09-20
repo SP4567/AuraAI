@@ -17,7 +17,7 @@ const BlogTitles = () => {
           <h1 className='text-xl font-semibold'>AI Title Generator</h1>
         </div>
         <p className='mt-6 text-sm font-medium'>Keyword</p>
-        <input onChange={(e) => setInput(e.target.value)} value={input} type="text" className='w-full p-2 px-3 mt-2 outline-none text-sm rounded-md border border=gray-300' placeholder='The future of Artificial Intelligence is....' required/>
+        <input onChange={(e) => setInput(e.target.value)} value={input} type="text" className='w-full p-2 px-3 mt-2 outline-none text-sm rounded-md border border-gray-300' placeholder='The future of Artificial Intelligence is....' required/>
         <p className='mt-4 text-sm font-medium'>
           Category
         </p>
