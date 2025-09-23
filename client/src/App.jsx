@@ -14,6 +14,7 @@ import StudyAssistant from './pages/StudyAssistant.jsx'
 import Community from './pages/Community.jsx'
 import { useAuth } from '@clerk/clerk-react'
 import { useEffect } from 'react'
+import {Toaster} from 'react-hot-toast'
 
 
 const App = () => {
@@ -21,8 +22,10 @@ const App = () => {
   useEffect(()=>{
     getToken().then((token)=>console.log(token))
   }, [])
+  
   return (
     <div>
+      <Toaster />
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/ai' element={<Layout />}>

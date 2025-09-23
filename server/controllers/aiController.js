@@ -4,7 +4,8 @@ import { clerkClient } from "@clerk/express";
 import axios from "axios";
 import { v2 as cloudinary } from "cloudinary";
 import fs from 'fs'
-import pdf from 'pdf-parse/lib/pdf-parse.js'
+import pdf from 'pdf-parse/lib/pdf-parse.js';
+import FormData from "form-data";
 
 const AI = new OpenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -13,13 +14,13 @@ const AI = new OpenAI({
 
 export const generateArticle = async (req, res) => {
   try {
-    const { userId } = req.auth || {}; // ✅ fixed
+    const { userId } = req.auth(); // ✅ fixed
     const { prompt, length } = req.body;
-    const user = await clerkClient.users.getUser(userId);
-    const plan = user.privateMetadata.plan || "free";
-    const free_usage = user.privateMetadata.free_usage || 0;
+    // const user = await clerkClient.users.getUser(userId);
+    const plan = req.plan;
+    const free_usage = req.free_usage;
 
-    if (plan !== "premium" && free_usage >= 10) {
+    if (plan !== 'premium' && free_usage >= 10) {
       return res.json({
         success: false,
         message: "Limit reached. Upgrade to continue"
@@ -40,7 +41,7 @@ export const generateArticle = async (req, res) => {
       VALUES (${userId}, ${prompt}, ${content}, 'article')
     `;
 
-    if (plan !== "premium") {
+    if (plan !== 'premium') {
       await clerkClient.users.updateUserMetadata(userId, {
         privateMetadata: {
           free_usage: free_usage + 1
@@ -57,13 +58,13 @@ export const generateArticle = async (req, res) => {
 
 export const generateBlogTitle = async (req, res) => {
   try {
-    const { userId } = req.auth || {}; // ✅ fixed
+    const { userId } = req.auth(); // ✅ fixed
     const { prompt } = req.body;
-    const user = await clerkClient.users.getUser(userId);
-    const plan = user.privateMetadata.plan || "free";
-    const free_usage = user.privateMetadata.free_usage || 0;
+    // const user = await clerkClient.users.getUser(userId);
+    const plan = req.plan;
+    const free_usage = req.free_usage;
 
-    if (plan !== "premium" && free_usage >= 10) {
+    if (plan !== 'premium' && free_usage >= 10) {
       return res.json({
         success: false,
         message: "Limit reached. Upgrade to continue"
@@ -84,7 +85,7 @@ export const generateBlogTitle = async (req, res) => {
       VALUES (${userId}, ${prompt}, ${content}, 'blog-title')
     `;
 
-    if (plan !== "premium") {
+    if (plan !== 'premium') {
       await clerkClient.users.updateUserMetadata(userId, {
         privateMetadata: {
           free_usage: free_usage + 1
@@ -101,27 +102,35 @@ export const generateBlogTitle = async (req, res) => {
 
 export const generateImages = async (req, res) => {
   try {
-    const { userId } = req.auth || {}; // ✅ fixed
-    const { prompt, publish } = req.body;
-    const user = await clerkClient.users.getUser(userId);
-    const plan = (user.privateMetadata.plan || "").toLowerCase();
+    const { userId } = req.auth();
+    const { prompt, publish } = req.body; // include style
+    // const user = await clerkClient.users.getUser(userId);
+    const plan = req.plan;
 
-    if (plan !== "premium") {
+    // Only premium users allowed
+    if (plan !== 'premium') {
       return res.json({
         success: false,
-        message: "This feature is available for premium users!"
-      });
+        message: "This feature is available for premium users only!"
+      })
     }
 
-    const formData = new FormData()
-    formData.append('prompt', prompt)
-    const {data} = await axios.post("https://api.freepik.com/v1/ai/mystic", formData, {
-        headers: {'x-api-key': process.env.FREEPIK_API_KEY},
-        responseType: "arraybuffer",
-    })
+    // Combine prompt + style
 
-    const base64Image = `data:image/png;base64,${Buffer.from(data, 'binary').toString('base64')}`
-    const {secure_url} = await cloudinary.uploader.upload(base64Image)
+    const formData = new FormData();
+    formData.append('prompt', prompt);
+
+    const { data } = await axios.post(
+      "https://clipdrop-api.co/text-to-image/v1",
+      formData,
+      {
+        headers: { 'x-api-key': process.env.CLIPDROP_API_KEY },
+        responseType: "arraybuffer",
+      }
+    );
+
+    const base64Image = `data:image/png;base64,${Buffer.from(data, 'binary').toString('base64')}`;
+    const { secure_url } = await cloudinary.uploader.upload(base64Image);
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type, publish) 
@@ -138,49 +147,101 @@ export const generateImages = async (req, res) => {
 
 export const removeImageBackground = async (req, res) => {
   try {
-    const { userId } = req.auth || {}; // ✅ fixed
-    const {image} = req.file;
-    const user = await clerkClient.users.getUser(userId);
-    const plan = (user.privateMetadata.plan || "").toLowerCase();
-
-    if (plan !== "premium") {
+    console.log('🎬 REMOVE BACKGROUND FUNCTION CALLED');
+    
+    const { userId } = req.auth();
+    console.log('👤 User ID:', userId);
+    
+    const plan = req.plan;
+    console.log('📋 Plan:', plan);
+    
+    // Check premium status first
+    if (plan !== 'premium') {
+      console.log('❌ BLOCKING: Not premium user');
       return res.json({
         success: false,
         message: "This feature is available for premium users!"
       });
     }
-
-    const {secure_url} = await cloudinary.uploader.upload(image.path, {
+    
+    console.log('✅ Premium user confirmed');
+    
+    // Debug file information
+    console.log('📁 req.file:', req.file);
+    console.log('📁 req.files:', req.files);
+    
+    if (!req.file) {
+      return res.json({
+        success: false,
+        message: "No image file uploaded. Please select an image."
+      });
+    }
+    
+    console.log('🖼️ File details:', {
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      filename: req.file.filename,
+      path: req.file.path,
+      destination: req.file.destination
+    });
+    
+    let imageSource;
+    
+    // Handle different multer configurations
+    if (req.file.path) {
+      // Disk storage - use file path
+      imageSource = req.file.path;
+      console.log('📍 Using file path:', imageSource);
+    } else if (req.file.buffer) {
+      // Memory storage - use buffer as base64
+      imageSource = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      console.log('💾 Using buffer as base64');
+    } else {
+      console.log('❌ No valid file path or buffer found');
+      return res.json({
+        success: false,
+        message: "Invalid file upload. Please try again."
+      });
+    }
+    
+    console.log('☁️ Uploading to Cloudinary...');
+    
+    const { secure_url } = await cloudinary.uploader.upload(imageSource, {
       transformation: [
         {
           effect: 'background_removal',
-          background_removal:'remove_the_background'
+          background_removal: 'remove_the_background'
         }
       ]
-    })
-
+    });
+    
+    console.log('✅ Cloudinary upload successful:', secure_url);
+    
+    // Save to database
     await sql`
-      INSERT INTO creations (user_id, prompt, content, type) 
-      VALUES (${userId}, 'Remove backkground from the image', ${secure_url}, 'image')`;
-
+      INSERT INTO creations (user_id, prompt, content, type)
+      VALUES (${userId}, 'Remove background from the image', ${secure_url}, 'image')`;
+    
+    console.log('✅ Database insert successful');
+    
     res.json({ success: true, content: secure_url });
-
   } catch (error) {
-    console.log(error.message);
+    console.error('💥 Error in removeImageBackground:', error);
     res.json({ success: false, message: error.message });
   }
 };
 
-
 export const removeImageObject = async (req, res) => {
   try {
-    const { userId } = req.auth || {}; // ✅ fixed
+    const { userId } = req.auth() || {}; // ✅ fixed
     const { image } = req.file;
     const { object } = req.body;
-    const user = await clerkClient.users.getUser(userId);
-    const plan = (user.privateMetadata.plan || "").toLowerCase();
+    // const user = await clerkClient.users.getUser(userId);
+    const plan = req.plan;
 
-    if (plan !== "premium") {
+    if (plan !== 'premium') {
       return res.json({
         success: false,
         message: "This feature is available for premium users!"
@@ -205,15 +266,14 @@ export const removeImageObject = async (req, res) => {
   }
 };
 
-
 export const reviewResume = async (req, res) => {
   try {
-    const { userId } = req.auth || {}; // ✅ fixed
+    const { userId } = req.auth(); // ✅ fixed
     const { resume } = req.file;
-    const user = await clerkClient.users.getUser(userId);
-    const plan = (user.privateMetadata.plan || "").toLowerCase();
+    // const user = await clerkClient.users.getUser(userId);
+    const plan = req.plan;
 
-    if (plan !== "premium") {
+    if (plan !== 'premium') {
       return res.json({
         success: false,
         message: "This feature is available for premium users!"
@@ -250,44 +310,50 @@ export const reviewResume = async (req, res) => {
 
 export const generatePrescription = async (req, res) => {
   try {
-    const { userId } = req.auth || {}; // Clerk user ID
+    const { userId } = req.auth(); // Clerk user ID
     const { firstName, lastName, age, gender, location, healthIssue, responseStyle } = req.body;
 
-    const user = await clerkClient.users.getUser(userId);
-    const plan = user.privateMetadata.plan || "free";
-    const free_usage = user.privateMetadata.free_usage || 0;
+    if (!firstName || !lastName || !age || !gender || !location || !healthIssue) {
+      return res.json({ success: false, message: "All fields are required" });
+    }
 
-    // Limit check for free users
-    if (plan !== "premium" && free_usage >= 10) {
+    // const user = await clerkClient.users.getUser(userId);
+    const plan = req.plan;
+    const free_usage = req.free_usage;
+
+    if (plan !== 'premium' && free_usage >= 10) {
       return res.json({
         success: false,
         message: "Free usage limit reached. Upgrade to premium to continue."
       });
     }
 
-    // Build AI prompt
     const prompt = `
       Patient Details:
-      - Name: ${firstName} ${lastName}
+      - firstName: ${firstName} 
+      - lastname: ${lastName}
       - Age: ${age}
       - Gender: ${gender}
       - Location: ${location}
-
-      Reported Issue:
-      ${healthIssue}
+      - Reported Issue: ${healthIssue}
 
       Please provide a ${responseStyle} medical-style prescription.
-      Include possible causes, recommendations for how to recover and make the health better, and next steps in a safe, helpful tone, also show the complete details of doctors available nearby at mentioned ${location} as per the reported issue ${healthIssue}.
+      Include possible causes, recommendations for recovery, lifestyle improvements, and next steps in a safe, helpful tone. 
+      Also, show the details of doctors available nearby in ${location} for the issue: ${healthIssue}.
     `;
 
     const aiResponse = await AI.chat.completions.create({
       model: "gemini-2.0-flash",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_completion_tokens: 500
+      max_completion_tokens: 2000
     });
 
-    const content = aiResponse.choices[0].message.content;
+    // Defensive check
+    const content = aiResponse.choices[0]?.message?.content;
+    if (!content) {
+      return res.json({ success: false, message: "AI returned empty response" });
+    }
 
     // Save to DB
     await sql`
@@ -295,36 +361,32 @@ export const generatePrescription = async (req, res) => {
       VALUES (${userId}, ${prompt}, ${content}, 'prescription')
     `;
 
-    // Update free usage if not premium
-    if (plan !== "premium") {
+    if (plan !== 'premium') {
       await clerkClient.users.updateUserMetadata(userId, {
-        privateMetadata: {
-          free_usage: free_usage + 1
-        }
+        privateMetadata: { free_usage: free_usage + 1 }
       });
     }
 
-    res.json({ success: true, prescription: content });
+    return res.json({ success: true, content });
   } catch (error) {
-    console.error(error.message);
-    res.json({ success: false, message: error.message });
+    console.error("Prescription error:", error);
+    return res.json({ success: false, message: error.message || "Server Error" });
   }
 };
 
 export const generateStudyContent = async (req, res) => {
   try {
-    const { userId } = req.auth || {}; // Clerk user ID
+    const { userId } = req.auth(); // Clerk user ID
     const { input, mode, topic } = req.body;
 
-    const user = await clerkClient.users.getUser(userId);
-    const plan = user.privateMetadata.plan || "free";
-    const free_usage = user.privateMetadata.free_usage || 0;
+    // const user = await clerkClient.users.getUser(userId);
+    const plan = req.plan;
 
     // Free usage limit
-    if (plan !== "premium" && free_usage >= 10) {
+    if (plan !== 'premium') {
       return res.json({
         success: false,
-        message: "Free usage limit reached. Upgrade to premium to continue."
+        message: "This feature is available for premium users!"
       });
     }
 
@@ -372,7 +434,7 @@ export const generateStudyContent = async (req, res) => {
     `;
 
     // Track free usage
-    if (plan !== "premium") {
+    if (plan !== 'premium') {
       await clerkClient.users.updateUserMetadata(userId, {
         privateMetadata: {
           free_usage: free_usage + 1
