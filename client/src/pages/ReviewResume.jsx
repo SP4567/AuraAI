@@ -26,6 +26,20 @@ const ReviewResume = () => {
       return;
     }
 
+    // File size check (5MB limit)
+    if (input.size > 5 * 1024 * 1024) {
+      toast.error('File size exceeds 5MB limit');
+      console.log('❌ File too large:', input.size);
+      return;
+    }
+
+    // File type check
+    if (input.type !== 'application/pdf') {
+      toast.error('Please upload only PDF files');
+      console.log('❌ Invalid file type:', input.type);
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('3. Creating FormData...');
@@ -42,13 +56,15 @@ const ReviewResume = () => {
       const token = await getToken();
       console.log('Token exists:', !!token);
       
-      console.log('6. Making API request to:', `${axios.defaults.baseURL}/api/resume-review`);
+      // Fixed: Using the correct endpoint based on your server structure
+      console.log('6. Making API request to:', `${axios.defaults.baseURL}api/ai/resume-review`);
       
-      const response = await axios.post('/api/resume-review', formData, {
+      const response = await axios.post('/api/ai/resume-review', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 60000, // 60 second timeout for large files
       });
 
       console.log('7. Response received:');
@@ -84,10 +100,14 @@ const ReviewResume = () => {
         toast.error(error.response.data.message);
       } else if (error.response?.status === 413) {
         toast.error('File too large. Please upload a file smaller than 5MB.');
+      } else if (error.response?.status === 404) {
+        toast.error('Resume review endpoint not found. Please check your backend configuration.');
       } else if (error.response?.status === 500) {
         toast.error('Server error. Please try again later.');
       } else if (error.code === 'NETWORK_ERROR') {
         toast.error('Network error. Please check your connection.');
+      } else if (error.code === 'ECONNABORTED') {
+        toast.error('Request timeout. Please try with a smaller file.');
       } else {
         toast.error('Failed to analyze resume. Please try again.');
       }
@@ -107,8 +127,21 @@ const ReviewResume = () => {
     console.log('File selected:', file);
     if (file) {
       console.log('- Name:', file.name);
-      console.log('- Size:', file.size);
+      console.log('- Size:', file.size, 'bytes');
+      console.log('- Size (MB):', (file.size / 1024 / 1024).toFixed(2));
       console.log('- Type:', file.type);
+      
+      // Validate file type
+      if (file.type !== 'application/pdf') {
+        toast.error('Please select only PDF files');
+        return;
+      }
+      
+      // Validate file size
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be less than 5MB');
+        return;
+      }
     }
     setInput(file);
   };
@@ -155,6 +188,15 @@ const ReviewResume = () => {
             </button>
           )}
         </div>
+
+        {/* Debug info in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className='mt-4 p-2 bg-gray-100 rounded text-xs'>
+            <p>Backend URL: {axios.defaults.baseURL}</p>
+            <p>Endpoint: /api/ai/resume-review</p>
+            {input && <p>File: {input.name} ({(input.size / 1024 / 1024).toFixed(2)}MB)</p>}
+          </div>
+        )}
       </form>
 
       <div className='w-full max-w-lg p-4 bg-white rounded-lg flex flex-col border border-gray-200 min-h-103.5'>
@@ -170,7 +212,7 @@ const ReviewResume = () => {
             </div>
           </div>
         ) : (
-          <div className='mt-4 text-sm text-gray-700'>
+          <div className='mt-4 text-sm text-gray-700 prose prose-sm max-w-none'>
             <Markdown>{content}</Markdown>
           </div>
         )}

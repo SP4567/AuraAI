@@ -383,6 +383,8 @@ export const reviewResume = async (req, res) => {
 
     // Step 6: Read and parse PDF
     console.log('6. Reading and parsing PDF...');
+    let pdfText; // Declare pdfText in the outer scope
+    
     try {
       const dataBuffer = fs.readFileSync(req.file.path);
       console.log('✅ File read successfully, buffer size:', dataBuffer.length);
@@ -402,7 +404,9 @@ export const reviewResume = async (req, res) => {
         });
       }
 
-      console.log('PDF text preview:', pdfData.text.substring(0, 200) + '...');
+      // Store the text in the outer scope variable
+      pdfText = pdfData.text;
+      console.log('PDF text preview:', pdfText.substring(0, 200) + '...');
       
     } catch (pdfError) {
       console.log('❌ PDF processing failed:', pdfError.message);
@@ -419,7 +423,11 @@ export const reviewResume = async (req, res) => {
     // Step 7: AI processing
     console.log('7. Processing with AI...');
     try {
-      const prompt = `Review the following resume and provide constructive feedback on its strengths, weaknesses, and areas for improvement. Also, create an updated resume.\n\nResume Content:\n\n${pdfData.text}`;
+      const prompt = `Review the following resume and provide constructive feedback on its strengths, weaknesses, and areas for improvement. Also, create an updated resume.
+
+Resume Content:
+
+${pdfText}`;
 
       const aiResponse = await AI.chat.completions.create({
         model: "gemini-2.0-flash",
@@ -447,6 +455,7 @@ export const reviewResume = async (req, res) => {
 
     } catch (aiError) {
       console.log('❌ AI processing failed:', aiError.message);
+      console.log('AI Error stack:', aiError.stack);
       return res.json({
         success: false,
         message: "Failed to process resume with AI. Please try again."
