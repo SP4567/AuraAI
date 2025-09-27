@@ -4,6 +4,8 @@ import axios from 'axios'
 import { useAuth } from '@clerk/clerk-react';
 import toast from 'react-hot-toast';
 
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
+
 const RemoveBackground = () => {
   const [input, setInput] = useState(null) // Changed to null initially
   const [loading, setLoading] = useState(false);
@@ -120,3 +122,100 @@ const RemoveBackground = () => {
 }
 
 export default RemoveBackground
+
+
+
+
+
+
+
+
+
+
+export const removeImageBackground = async (req, res) => {
+  try {
+    console.log('🎬 REMOVE BACKGROUND FUNCTION CALLED');
+    
+    const { userId } = req.auth();
+    console.log('👤 User ID:', userId);
+    
+    const plan = req.plan;
+    console.log('📋 Plan:', plan);
+    
+    // Check premium status first
+    if (plan !== 'premium') {
+      console.log('❌ BLOCKING: Not premium user');
+      return res.json({
+        success: false,
+        message: "This feature is available for premium users!"
+      });
+    }
+    
+    console.log('✅ Premium user confirmed');
+    
+    // Debug file information
+    console.log('📁 req.file:', req.file);
+    console.log('📁 req.files:', req.files);
+    
+    if (!req.file) {
+      return res.json({
+        success: false,
+        message: "No image file uploaded. Please select an image."
+      });
+    }
+    
+    console.log('🖼️ File details:', {
+      fieldname: req.file.fieldname,
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+      filename: req.file.filename,
+      path: req.file.path,
+      destination: req.file.destination
+    });
+    
+    let imageSource;
+    
+    // Handle different multer configurations
+    if (req.file.path) {
+      // Disk storage - use file path
+      imageSource = req.file.path;
+      console.log('📍 Using file path:', imageSource);
+    } else if (req.file.buffer) {
+      // Memory storage - use buffer as base64
+      imageSource = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+      console.log('💾 Using buffer as base64');
+    } else {
+      console.log('❌ No valid file path or buffer found');
+      return res.json({
+        success: false,
+        message: "Invalid file upload. Please try again."
+      });
+    }
+    
+    console.log('☁️ Uploading to Cloudinary...');
+    
+    const { secure_url } = await cloudinary.uploader.upload(imageSource, {
+      transformation: [
+        {
+          effect: 'background_removal',
+          background_removal: 'remove_the_background'
+        }
+      ]
+    });
+    
+    console.log('✅ Cloudinary upload successful:', secure_url);
+    
+    // Save to database
+    await sql`
+      INSERT INTO creations (user_id, prompt, content, type)
+      VALUES (${userId}, 'Remove background from the image', ${secure_url}, 'image')`;
+    
+    console.log('✅ Database insert successful');
+    
+    res.json({ success: true, content: secure_url });
+  } catch (error) {
+    console.error('💥 Error in removeImageBackground:', error);
+    res.json({ success: false, message: error.message });
+  }
+};

@@ -62,7 +62,6 @@ const WriteArticle = () => {
           placeholder="The future of Artificial Intelligence is...."
           required
         />
-
         <p className="mt-4 text-sm font-medium">Article Length</p>
         <div className="mt-3 flex gap-3 flex-wrap sm:max-w-9/11">
           {articleLength.map((item, index) => (

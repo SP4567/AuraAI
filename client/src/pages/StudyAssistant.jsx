@@ -1,56 +1,61 @@
-import React, { useState } from "react"
-import { Brain, BookOpen, Video, CheckCircle } from "lucide-react"
+import React, { useState } from "react";
+import { Brain, BookOpen } from "lucide-react";
+import Markdown from "react-markdown";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useAuth } from "@clerk/clerk-react";
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
 const StudyAssistant = () => {
-  const [input, setInput] = useState("")
-  const [topic, setTopic] = useState("")
-  const [selectedMode, setSelectedMode] = useState("Q&A")
-  const [progress, setProgress] = useState(0)
-  const [questions, setQuestions] = useState("")
-  const [videos, setVideos] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [input, setInput] = useState("");
+  const [selectedMode, setSelectedMode] = useState("Q&A");
+  const [content, setContent] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { getToken } = useAuth();
 
   const onSubmitHandler = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setProgress((prev) => Math.min(prev + 20, 100))
+    e.preventDefault();
+
+    if (!input.trim()) {
+      toast.error("Please enter a topic before generating.");
+      return;
+    }
 
     try {
-      const res = await fetch("/api/generate-study-content", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          input,
-          mode: selectedMode,
-          topic
-        })
-      })
-      const data = await res.json()
-      if (data.success) {
-        // Split Gemini output into sections
-        const parts = data.content.split("YouTube Recommendations:")
-        setQuestions(parts[0]?.trim() || "")
-        setVideos(parts[1]?.trim() || "")
-      } else {
-        setQuestions("⚠️ " + data.message)
-        setVideos("")
+      setLoading(true);
+      const token = await getToken();
+      if (!token) {
+        toast.error("Authentication failed. Please log in again.");
+        return;
       }
-    } catch (err) {
-      setQuestions("Error fetching study content.")
-      setVideos("")
+
+      const { data } = await axios.post(
+        "/api/ai/generate-study-content", // make sure this matches backend
+        { input, mode: selectedMode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (data.success) {
+        setContent(data.content.trim());
+      } else {
+        toast.error(data.message || "Something went wrong.");
+        setContent("");
+      }
+    } catch (error) {
+      console.error("Submit error:", error);
+      toast.error(error.message || "Request failed.");
+      setContent("");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const reset = () => {
-    setInput("")
-    setTopic("")
-    setQuestions("")
-    setVideos("")
-    setProgress(0)
-    setSelectedMode("Q&A")
-  }
+    setInput("");
+    setContent("");
+    setSelectedMode("Q&A");
+  };
 
   return (
     <div className="h-full overflow-y-scroll p-6 flex items-start flex-wrap gap-7 text-slate-700">
@@ -65,7 +70,6 @@ const StudyAssistant = () => {
 
         {/* Study Input */}
         <p className="mt-6 my-3 text-sm font-medium">Describe your Topic a bit.</p>
-
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -84,7 +88,7 @@ const StudyAssistant = () => {
               onClick={() => setSelectedMode(mode)}
               className={`text-xs px-4 py-1 border rounded-full cursor-pointer ${
                 selectedMode === mode
-                  ? "bg-blue-50 text-deep to-blue-800"
+                  ? "bg-blue-50 text-blue-800"
                   : "text-gray-500 border-gray-300"
               }`}
             >
@@ -93,35 +97,19 @@ const StudyAssistant = () => {
           ))}
         </div>
 
-        {/* YouTube Topic */}
-        <div className="mt-4, my-6">
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="Optional: Enter a topic for YouTube video recommendations"
-            className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-           <p className="text-xs text-gray-500 font-light mt-2">Mention keywords or topic title.</p>
-        </div>
-
-        <p className="">Progress Bar</p>
-        {/* Progress Bar */}
-        <div className="w-full bg-slate-200 h-2 mt-6 rounded-full overflow-hidden">
-          <div
-            className="bg-indigo-600 h-2 transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
         {/* Buttons */}
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 mt-7">
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition bg-gradient-to-r from-[#0658bd] to-[#3db7d6]"
+            className="w-full flex justify-center items-center gap-2 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition bg-gradient-to-r from-[#0658bd] to-[#3db7d6]"
           >
-            {loading ? "Generating..." : "Generate"}
+            {loading ? (
+              <span className="w-4 h-4 my-1 rounded-full border-2 border-t-transparent animate-spin"></span>
+            ) : (
+              <BookOpen className="w-4" />
+            )}
+            Generate
           </button>
           <button
             type="button"
@@ -139,36 +127,23 @@ const StudyAssistant = () => {
           <BookOpen className="w-6 h-6 text-blue-600" /> Results
         </h2>
 
-        {questions || videos ? (
-          <div className="space-y-6 text-sm text-gray-700 whitespace-pre-line">
-            {questions && (
-              <div>
-                <h3 className="font-semibold text-indigo-600 mb-2">
-                  Practice Content
-                </h3>
-                <p>{questions}</p>
-              </div>
-            )}
-            {videos && (
-              <div>
-                <h3 className="font-semibold text-indigo-600 mb-2">
-                  🎥 YouTube Recommendations
-                </h3>
-                <p>{videos}</p>
-              </div>
-            )}
+        {content ? (
+          <div className="mt-3 h-full overflow-y-scroll text-sm text-slate-600">
+            <div className="reset-tw">
+              <Markdown>{content}</Markdown>
+            </div>
           </div>
         ) : (
-          <div className="text-gray-400 text-center">
-            <CheckCircle className="w-9 h-9 mx-auto mb-3" />
-            <p>
-              Enter something above and click <b>"Generate"</b> to get started
-            </p>
+          <div className="flex-1 flex justify-center items-center">
+            <div className="text-sm flex flex-col items-center gap-5 text-gray-400">
+              <BookOpen className="w-9 h-9" />
+              <p>Enter/Describe a topic and click 'Generate' to get started</p>
+            </div>
           </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default StudyAssistant
+export default StudyAssistant;

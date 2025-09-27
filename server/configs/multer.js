@@ -2,6 +2,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from 'url';
+import pdf from 'pdf-parse';
 
 // Handle ES modules __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -34,10 +35,19 @@ export const upload = multer({
     },
     fileFilter: function (req, file, cb) {
         console.log('🔍 Multer fileFilter called:', file.mimetype);
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed!'));
-        }
+        const allowedMimeTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only images (JPG/PNG/WebP) and resumes (PDF/DOC/DOCX) are allowed!"));
     }
+  },
 });

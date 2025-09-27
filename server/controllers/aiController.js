@@ -4,8 +4,8 @@ import { clerkClient } from "@clerk/express";
 import axios from "axios";
 import { v2 as cloudinary } from "cloudinary";
 import fs from 'fs'
-import pdf from 'pdf-parse/lib/pdf-parse.js';
 import FormData from "form-data";
+import pdf from 'pdf-parse';
 
 const AI = new OpenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -235,78 +235,245 @@ export const removeImageBackground = async (req, res) => {
 
 export const removeImageObject = async (req, res) => {
   try {
-    const { userId } = req.auth() || {}; // ✅ fixed
-    const { image } = req.file;
-    const { object } = req.body;
-    // const user = await clerkClient.users.getUser(userId);
-    const plan = req.plan;
-
-    if (plan !== 'premium') {
-      return res.json({
-        success: false,
-        message: "This feature is available for premium users!"
-      });
-    }
-
-    const {public_id} = await cloudinary.uploader.upload(image.path)
-    const imageUrl = cloudinary.url(public_id,{
-      transformation: [{effect:`gen_remove:${object}`}],
-      resource_type:'image'
-    })
-
-    await sql`
-      INSERT INTO creations (user_id, prompt, content, type) 
-      VALUES (${userId}, ${`Removed ${object} from image`}, ${imageUrl}, 'image')`;
-
-    res.json({ success: true, content: imageUrl });
+    console.log('🎬 REMOVE OBJECT FUNCTION CALLED');
     
-  } catch (error) {
-    console.log(error.message);
-    res.json({ success: false, message: error.message });
-  }
-};
-
-export const reviewResume = async (req, res) => {
-  try {
-    const { userId } = req.auth(); // ✅ fixed
-    const { resume } = req.file;
-    // const user = await clerkClient.users.getUser(userId);
+    const { userId } = req.auth();
+    const { object } = req.body;
     const plan = req.plan;
 
     if (plan !== 'premium') {
-      return res.json({
-        success: false,
-        message: "This feature is available for premium users!"
-      });
+      return res.json({ success: false, message: "This feature is available for premium users!" });
     }
 
-    if(resume.size > 5 * 1024 * 1024){
-      return res.json({success:false, message:"Resume file size exceeds allowed size (5MB)."})
+    if (!req.file) {
+      return res.json({ success: false, message: "No image file uploaded. Please select an image." });
     }
 
-    const dataBuffer = fs.readFileSync(resume.path)
-    const pdfData = await pdf(dataBuffer)
-    const prompt = `Review the following resume and provide constructive feedback on its strengths, weakness, and the areas for improvement. Also, create an updated resume. Resume Content: \n\n${pdfData.text}`
-        const aiResponse = await AI.chat.completions.create({
-      model: "gemini-2.0-flash",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-      max_completion_tokens: 2000
+    if (!object || object.trim() === '') {
+      return res.json({ success: false, message: "Please specify what object to remove from the image." });
+    }
+
+    // Decide the image source
+    let imageSource = req.file.path 
+      ? req.file.path 
+      : `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+    console.log('☁️ Uploading to Cloudinary...');
+
+    // Upload without transformation first
+    const uploadResult = await cloudinary.uploader.upload(imageSource, {
+      resource_type: 'image',
+      quality: 'auto',
+      secure: true
     });
 
-    const content = aiResponse.choices[0].message.content;
+    const { public_id } = uploadResult;
 
+    // Generate the transformed URL with e_gen_remove
+    const imageUrl = cloudinary.url(public_id, {
+      transformation: [{ effect: `e_gen_remove:${object.trim()}` }],
+      secure: true
+    });
+
+    console.log('🔗 Generated transformation URL:', imageUrl);
+
+    // Insert into DB
     await sql`
-      INSERT INTO creations (user_id, prompt, content, type) 
-      VALUES (${userId}, 'Review the uploaded resume', ${content}, 'resume-review')`;
+      INSERT INTO creations (user_id, prompt, content, type)
+      VALUES (${userId}, ${`Removed ${object.trim()} from image`}, ${imageUrl}, 'image')`;
 
-    res.json({ success: true, content: content });
-    
+    console.log('✅ Database insert successful');
+    return res.json({ success: true, content: imageUrl });
+
   } catch (error) {
-    console.log(error.message);
-    res.json({ success: false, message: error.message });
+    console.error('💥 Error in removeImageObject:', error);
+    return res.json({
+      success: false,
+      message: error.message.includes('Invalid transformation') 
+        ? "The specified object couldn't be removed. Try being more specific." 
+        : "Image processing failed. Please try again."
+    });
   }
 };
+export const reviewResume = async (req, res) => {
+  console.log('=== RESUME REVIEW START ===');
+  
+  try {
+    // Step 1: Check if multer processed the file
+    console.log('1. Checking multer file processing...');
+    console.log('req.file:', req.file);
+    console.log('req.body:', req.body);
+    
+    if (!req.file) {
+      console.log('❌ No file received by multer');
+      return res.json({
+        success: false,
+        message: "No resume file uploaded. Multer did not process the file."
+      });
+    }
+    
+    console.log('✅ File received by multer:', {
+      originalname: req.file.originalname,
+      filename: req.file.filename,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      path: req.file.path
+    });
+
+    // Step 2: Auth check
+    console.log('2. Checking authentication...');
+    let userId;
+    try {
+      const auth = req.auth();
+      userId = auth.userId;
+      console.log('✅ Auth successful, User ID:', userId);
+    } catch (authError) {
+      console.log('❌ Auth failed:', authError.message);
+      // Clean up uploaded file
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.json({
+        success: false,
+        message: "Authentication failed"
+      });
+    }
+
+    // Step 3: Plan check (comment this out if you want to skip premium check for testing)
+    console.log('3. Checking user plan...');
+    const plan = req.plan;
+    console.log('User plan:', plan);
+    
+    if (plan !== 'premium') {
+      console.log('❌ User not premium');
+      // Clean up uploaded file
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.json({
+        success: false,
+        message: "This feature is available for premium users only!"
+      });
+    }
+
+    // Step 4: File size check
+    console.log('4. Checking file size...');
+    if (req.file.size > 5 * 1024 * 1024) {
+      console.log('❌ File too large:', req.file.size);
+      // Clean up uploaded file
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.json({
+        success: false,
+        message: "Resume file size exceeds 5MB limit."
+      });
+    }
+
+    // Step 5: Check if file exists on disk
+    console.log('5. Checking if file exists on disk...');
+    if (!fs.existsSync(req.file.path)) {
+      console.log('❌ File does not exist at path:', req.file.path);
+      return res.json({
+        success: false,
+        message: "Uploaded file not found on server"
+      });
+    }
+    console.log('✅ File exists on disk');
+
+    // Step 6: Read and parse PDF
+    console.log('6. Reading and parsing PDF...');
+    try {
+      const dataBuffer = fs.readFileSync(req.file.path);
+      console.log('✅ File read successfully, buffer size:', dataBuffer.length);
+      
+      const pdfData = await pdf(dataBuffer);
+      console.log('✅ PDF parsed successfully, text length:', pdfData.text.length);
+      
+      // Clean up uploaded file immediately after reading
+      fs.unlinkSync(req.file.path);
+      console.log('✅ Temporary file cleaned up');
+
+      if (!pdfData.text || pdfData.text.trim().length === 0) {
+        console.log('❌ No text extracted from PDF');
+        return res.json({
+          success: false,
+          message: "Could not extract text from the PDF. Please ensure it contains readable text."
+        });
+      }
+
+      console.log('PDF text preview:', pdfData.text.substring(0, 200) + '...');
+      
+    } catch (pdfError) {
+      console.log('❌ PDF processing failed:', pdfError.message);
+      // Clean up file on error
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.json({
+        success: false,
+        message: "Failed to process PDF file. Please ensure it's a valid PDF."
+      });
+    }
+
+    // Step 7: AI processing
+    console.log('7. Processing with AI...');
+    try {
+      const prompt = `Review the following resume and provide constructive feedback on its strengths, weaknesses, and areas for improvement. Also, create an updated resume.\n\nResume Content:\n\n${pdfData.text}`;
+
+      const aiResponse = await AI.chat.completions.create({
+        model: "gemini-2.0-flash",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+        max_completion_tokens: 2000
+      });
+
+      const content = aiResponse.choices[0].message.content;
+      console.log('✅ AI response received, length:', content.length);
+
+      // Step 8: Save to database
+      console.log('8. Saving to database...');
+      await sql`
+        INSERT INTO creations (user_id, prompt, content, type) 
+        VALUES (${userId}, 'Review the uploaded resume', ${content}, 'resume-review')`;
+      
+      console.log('✅ Saved to database successfully');
+
+      console.log('🎉 Resume review completed successfully!');
+      return res.json({ 
+        success: true, 
+        content
+      });
+
+    } catch (aiError) {
+      console.log('❌ AI processing failed:', aiError.message);
+      return res.json({
+        success: false,
+        message: "Failed to process resume with AI. Please try again."
+      });
+    }
+
+  } catch (error) {
+    console.error('💥 Unexpected error in reviewResume:', error);
+    console.error('Error stack:', error.stack);
+    
+    // Clean up uploaded file if it exists
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+        console.log('✅ Cleaned up file after error');
+      } catch (cleanupError) {
+        console.error('❌ File cleanup error:', cleanupError.message);
+      }
+    }
+    
+    return res.json({
+      success: false,
+      message: `Server error: ${error.message}`
+    });
+  }
+};
+
 
 export const generatePrescription = async (req, res) => {
   try {
@@ -377,97 +544,74 @@ export const generatePrescription = async (req, res) => {
 export const generateStudyContent = async (req, res) => {
   try {
     const { userId } = req.auth(); // Clerk user ID
-    const { input, mode, topic } = req.body;
+    const { input, mode } = req.body;
 
-    // const user = await clerkClient.users.getUser(userId);
+    // Plan from middleware
     const plan = req.plan;
 
-    // Free usage limit
-    if (plan !== 'premium') {
-      return res.json({
+    // Restrict free users
+    if (plan !== "premium") {
+      return res.status(403).json({
         success: false,
-        message: "This feature is available for premium users!"
+        message: "This feature is available for premium users!",
       });
     }
 
-    // Build AI prompt
+    // Validate input
+    if (!input || !input.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Input topic is required",
+      });
+    }
+
+    // Build AI prompt based on mode
     let prompt = "";
 
-    if (mode === "Q&A") {
-      prompt = `
-        Generate 25 practice questions (different difficulty levels) 
-        for the topic: "${input}".
-        Format them as a bullet list.
-      `;
-    } else if (mode === "Flashcards") {
-      prompt = `
-        Generate 5 flashcards for the topic: "${input}".
-        Format them as "Q: ... | A: ...".
-      `;
-    } else if (mode === "Summarizer") {
-      prompt = `
-        Summarize the following notes into a concise explanation: "${input}".
-      `;
+    switch (mode) {
+      case "Q&A":
+        prompt = `Generate 25 practice questions (varied difficulty) for the topic: "${input}". Format as a bullet list.`;
+        break;
+      case "Flashcards":
+        prompt = `Generate 5 flashcards for the topic: "${input}". Format them as "Q: ... | A: ...".`;
+        break;
+      case "Summarizer":
+        prompt = `Summarize the following notes into a concise explanation: "${input}".`;
+        break;
+      default:
+        prompt = `Generate helpful study material for: "${input}".`;
     }
 
-    // If YouTube topic entered
-    if (topic) {
-      prompt += `
-        Also suggest 5 best YouTube channels for learning "${topic}".
-        Format them as bullet points.
-      `;
-    }
-
+    // Call Gemini AI safely
     const aiResponse = await AI.chat.completions.create({
       model: "gemini-2.0-flash",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_completion_tokens: 500
+      max_completion_tokens: 2500,
     });
 
-    const content = aiResponse.choices[0].message.content;
-
-    // Save to DB
-    await sql`
-      INSERT INTO creations (user_id, prompt, content, type) 
-      VALUES (${userId}, ${prompt}, ${content}, 'study-content')
-    `;
-
-    // Track free usage
-    if (plan !== 'premium') {
-      await clerkClient.users.updateUserMetadata(userId, {
-        privateMetadata: {
-          free_usage: free_usage + 1
-        }
+    // Check AI response structure
+    if (!aiResponse?.choices?.[0]?.message?.content) {
+      return res.status(502).json({
+        success: false,
+        message: "AI service did not return content.",
       });
     }
 
+    const content = aiResponse.choices[0].message.content.trim();
+
+    // Save to DB
+    await sql`
+      INSERT INTO creations (user_id, prompt, content, type)
+      VALUES (${userId}, ${prompt}, ${content}, 'study-content')
+    `;
+
     res.json({ success: true, content });
   } catch (error) {
-    console.error(error.message);
-    res.json({ success: false, message: error.message });
+    console.error("Controller error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server error while generating study content.",
+    });
   }
 };
-
-
-// import OpenAI from "openai";
-
-// const openai = new OpenAI({
-//   apiKey: "GEMINI_API_KEY",
-//   baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-// });
-
-// async function main() {
-//   const image = await openai.images.generate(
-//     {
-//       model: "imagen-3.0-generate-002",
-//       prompt: "a portrait of a sheepadoodle wearing a cape",
-//       response_format: "b64_json",
-//       n: 1,
-//     }
-//   );
-
-//   console.log(image.data);
-// }
-
-// main();
