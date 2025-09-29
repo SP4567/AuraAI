@@ -32,7 +32,7 @@ app.use(express.static(path.join(__dirname, 'client/build')))
 
 // ✅ Catch-all (Express 5 needs `/*`)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/build', 'index.html'))
+  res.sendFile(path.join(__dirname, 'client/', 'index.html'))
 })
 
 const PORT = process.env.PORT || 5000
