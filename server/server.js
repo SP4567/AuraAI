@@ -28,11 +28,11 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Serve static files from React build
-app.use(express.static(path.join(__dirname, 'client/build')))
+app.use(express.static(path.join(__dirname, 'client')))
 
 // ✅ Catch-all (Express 5 needs `/*`)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/', 'index.html'))
+  res.sendFile(path.join(__dirname, 'client', 'index.html'))
 })
 
 const PORT = process.env.PORT || 5000
