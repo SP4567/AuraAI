@@ -15,6 +15,27 @@ body{
   background-repeat: no-repeat;
 } */
 
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: 200%;
+  animation: marquee-scroll 20s linear infinite;
+  will-change: transform;
+}
+
+.marquee-content {
+  flex: 0 0 auto;
+}
+
 .reset-tw, .reset-tw *{
   all: revert !important
 }
