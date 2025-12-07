@@ -8,8 +8,11 @@ const Hero = () => {
 
   return (
     <div className="px-4 sm:px-20 xl:px-32 relative flex flex-col w-full justify-center bg-[url('/blue-pink-halftone-background_53876-99004.jpg')] bg-cover bg-no-repeat bg-fixed min-h-screen">
-      
+
       {/* Hero Text */}
+      <br />
+      <br />
+      <br />
       <div className="text-center mb-6">
         <h1 className="text-3xl sm:text-5xl md:text-6xl 2xl:text-7xl font-semibold mx-auto leading-[1.2]">
           Create amazing content <br />
@@ -63,12 +66,55 @@ const Hero = () => {
         </div>
       )}
 
-      {/* Trusted by Section */}
+      {/* Trusted By */}
+      {/* Trusted By Section */}
       <div className="flex items-center gap-4 mt-8 mx-auto text-gray-600">
-        <img src={user_group} alt="Description of image" className="mx-auto" />
+        <img src={user_group} alt="People" className="mx-auto" />
         Trusted By 10k+ people.
       </div>
-    </div>
+      <br />
+      {/* Marquee */}
+      <div className="overflow-hidden w-full mt-8">
+        <div
+          className="marquee-track flex items-center gap-10"
+        >
+          {[
+            "slack",
+            "framer",
+            "netflix",
+            "google",
+            "linkedin",
+            "instagram",
+            "facebook",
+          ].map((logo, index) => (
+            <img
+              key={index}
+              alt={logo}
+              className="h-10 w-auto object-contain mx-6"
+              src={`https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/companyLogo/${logo}.svg`}
+            />
+          ))}
+
+          {/* Duplicate for infinite scroll */}
+          {[
+            "slack",
+            "framer",
+            "netflix",
+            "google",
+            "linkedin",
+            "instagram",
+            "facebook",
+          ].map((logo, index) => (
+            <img
+              key={"dup-" + index}
+              alt={logo}
+              className="h-10 w-auto object-contain mx-6"
+              src={`https://raw.githubusercontent.com/prebuiltui/prebuiltui/main/assets/companyLogo/${logo}.svg`}
+            />
+          ))}
+        </div>
+      </div>
+    </div >
   );
 };
 
