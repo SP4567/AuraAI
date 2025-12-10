@@ -54,7 +54,7 @@ export const AiToolsData = [
         description: 'Remove unwanted objects from your images seamlessly with our AI object removal tool.',
         Icon: Scissors,
         bg: { from: '#5C6AF1', to: '#427DF5' },
-        path: '/ai/remove-object'
+        path: '/ai/remove-objects'
     },
     {
         title: 'Resume Reviewer',
