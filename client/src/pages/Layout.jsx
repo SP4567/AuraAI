@@ -25,7 +25,7 @@ const Layout = () => {
         </div>
         {sidebar && (
           <div 
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm sm:hidden z-[50]"
+            className="fixed inset-0 bg-black/20 sm:hidden z-[60]"
             onClick={() => setSidebar(false)}
           />
         )}
@@ -39,4 +39,3 @@ const Layout = () => {
 }
 
 export default Layout
-
