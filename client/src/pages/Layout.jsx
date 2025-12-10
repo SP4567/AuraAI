@@ -25,7 +25,7 @@ const Layout = () => {
         </div>
         {sidebar && (
           <div 
-            className="fixed inset-0 bg-black/20 sm:hidden z-[60]"
+            className="fixed inset-0 bg-black/1 sm:hidden z-[60]"
             onClick={() => setSidebar(false)}
           />
         )}
@@ -33,7 +33,7 @@ const Layout = () => {
     </div>
   ): (
     <div className='flex items-center justify-center h-screen'>
-      <SignIn />
+      <SignIn /> 
     </div>
   )
 }
