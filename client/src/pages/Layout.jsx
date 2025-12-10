@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import logo from '../assets/logoImage.png'
+import image from '../assets/newImage.png'
 import { Menu, X } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { SignIn, useUser } from '@clerk/clerk-react'
@@ -11,9 +11,9 @@ const Layout = () => {
   const { user } = useUser()
 
   return  user ? (
-    <div className='flex flex-col items-start justify-start h-screen'>
+    <div className='flex flex-col items-start justify-start h-screen bg-black'>
       <nav className='w-full px-8 min-h-14 flex items-center justify-between border-b border-gray-200'>
-        <img src={logo} className='w-32 sm:w-30 cursor-pointer' alt="logo" onClick={() => navigate('/')}/>
+        <img src={image} className='w-32 sm:w-30 flex items-center gap-2 rounded-full text-sm cursor-pointer' alt="logo" onClick={() => navigate('/')}/>
         {
           sidebar ? <X onClick={() => setSidebar(false)} className="w-6 h-6 text-gray-600 sm:hidden cursor-pointer" /> : <Menu onClick={() => setSidebar(true)} className='w-6 h-6 text-gray-600 sm:hidden cursor-pointer'/>
         }
