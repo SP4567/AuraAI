@@ -23,19 +23,14 @@ const Layout = () => {
         <div className='flex-1 bg-[#F4F7FB]'>
           <Outlet />
         </div>
-        {sidebar && (
-          <div 
-            className="fixed inset-0 bg-black/1 sm:hidden z-[60]"
-            onClick={() => setSidebar(false)}
-          />
-        )}
       </div>  
     </div>
   ): (
     <div className='flex items-center justify-center h-screen'>
-      <SignIn /> 
+      <SignIn />
     </div>
   )
 }
 
 export default Layout
+
