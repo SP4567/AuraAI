@@ -8,9 +8,11 @@ import FormData from "form-data";
 import pdf from 'pdf-parse';
 
 const AI = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
+  apiKey: process.env.NVIDIA_API_KEY || process.env.NEMOTRON_API_KEY || "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",
+  baseURL: process.env.NVIDIA_BASE_URL || process.env.NEMOTRON_BASE_URL || "https://integrate.api.nvidia.com/v1"
 });
+
+const NEMOTRON_MODEL = process.env.NEMOTRON_MODEL || "nvidia/nemotron-3.5-super-vl-120b-a12b";
 
 export const generateArticle = async (req, res) => {
   try {
@@ -28,13 +30,13 @@ export const generateArticle = async (req, res) => {
     }
 
     const aiResponse = await AI.chat.completions.create({
-      model: "gemini-2.0-flash",
+      model: NEMOTRON_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_completion_tokens: length
+      max_tokens: Number(length) || 1000
     });
 
-    const content = aiResponse.choices[0].message.content;
+    const content = aiResponse.choices[0]?.message?.content || aiResponse.choices[0]?.message?.reasoning_content;
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type) 
@@ -72,13 +74,13 @@ export const generateBlogTitle = async (req, res) => {
     }
 
     const aiResponse = await AI.chat.completions.create({
-      model: "gemini-2.0-flash",
+      model: NEMOTRON_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_completion_tokens: 100
+      max_tokens: 150
     });
 
-    const content = aiResponse.choices[0].message.content;
+    const content = aiResponse.choices[0]?.message?.content || aiResponse.choices[0]?.message?.reasoning_content;
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type) 
@@ -430,13 +432,13 @@ Resume Content:
 ${pdfText}`;
 
       const aiResponse = await AI.chat.completions.create({
-        model: "gemini-2.0-flash",
+        model: NEMOTRON_MODEL,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
-        max_completion_tokens: 2000
+        max_tokens: 2000
       });
 
-      const content = aiResponse.choices[0].message.content;
+      const content = aiResponse.choices[0]?.message?.content || aiResponse.choices[0]?.message?.reasoning_content;
       console.log('✅ AI response received, length:', content.length);
 
       // Step 8: Save to database
@@ -519,14 +521,14 @@ export const generatePrescription = async (req, res) => {
     `;
 
     const aiResponse = await AI.chat.completions.create({
-      model: "gemini-2.0-flash",
+      model: NEMOTRON_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_completion_tokens: 2000
+      max_tokens: 2000
     });
 
     // Defensive check
-    const content = aiResponse.choices[0]?.message?.content;
+    const content = aiResponse.choices[0]?.message?.content || aiResponse.choices[0]?.message?.reasoning_content;
     if (!content) {
       return res.json({ success: false, message: "AI returned empty response" });
     }
@@ -591,23 +593,24 @@ export const generateStudyContent = async (req, res) => {
         prompt = `Generate helpful study material for: "${input}".`;
     }
 
-    // Call Gemini AI safely
+    // Call Nemotron AI safely
     const aiResponse = await AI.chat.completions.create({
-      model: "gemini-2.0-flash",
+      model: NEMOTRON_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      max_completion_tokens: 2500,
+      max_tokens: 2500,
     });
 
     // Check AI response structure
-    if (!aiResponse?.choices?.[0]?.message?.content) {
+    const rawContent = aiResponse?.choices?.[0]?.message?.content || aiResponse?.choices?.[0]?.message?.reasoning_content;
+    if (!rawContent) {
       return res.status(502).json({
         success: false,
         message: "AI service did not return content.",
       });
     }
 
-    const content = aiResponse.choices[0].message.content.trim();
+    const content = rawContent.trim();
 
     // Save to DB
     await sql`
