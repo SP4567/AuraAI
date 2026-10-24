@@ -53,11 +53,11 @@ const Sidebar = ({ sidebar, setSidebar }) => {
 
       {/* Nav Links */}
       <div className="flex flex-col w-full px-3 gap-1">
-        {navItems.map(({ to, label }) => (
+        {navItems.map((navItem) => (
           <NavLink
-            key={to}
-            to={to}
-            end={to === '/ai'}
+            key={navItem.to}
+            to={navItem.to}
+            end={navItem.to === '/ai'}
             onClick={() => setSidebar(false)}
             className={({ isActive }) =>
               `px-3.5 py-3 flex items-center gap-3 rounded-xl transition-colors ${
@@ -67,8 +67,8 @@ const Sidebar = ({ sidebar, setSidebar }) => {
               }`
             }
           >
-            <item.Icon className="w-4 h-4" />
-            {label}
+            {React.createElement(navItem.Icon, { className: 'w-4 h-4' })}
+            {navItem.label}
           </NavLink>
         ))}
       </div>
