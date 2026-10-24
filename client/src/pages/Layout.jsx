@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import image from '../assets/newImage.png'
 import { Menu, X } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { SignIn, useUser } from '@clerk/clerk-react'
+import BrandLogo from '../components/BrandLogo'
 
 const Layout = () => {
   const navigate = useNavigate()
@@ -13,7 +13,9 @@ const Layout = () => {
   return  user ? (
     <div className='flex flex-col items-start justify-start h-screen bg-black relative'>
       <nav className='w-full px-8 min-h-14 flex items-center justify-between border-b border-gray-200'>
-        <img src={image} className='w-32 sm:w-30 flex items-center gap-2 rounded-full text-sm cursor-pointer' alt="logo" onClick={() => navigate('/')}/>
+        <button type="button" aria-label="Aura AI home" onClick={() => navigate('/')} className="cursor-pointer">
+          <BrandLogo light />
+        </button>
         {
           sidebar ? <X onClick={() => setSidebar(false)} className="w-6 h-6 text-white sm:hidden cursor-pointer" /> : <Menu onClick={() => setSidebar(true)} className='w-6 h-6 text-white sm:hidden cursor-pointer'/>
         }
@@ -33,4 +35,3 @@ const Layout = () => {
 }
 
 export default Layout
-

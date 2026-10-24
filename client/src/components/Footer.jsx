@@ -1,11 +1,11 @@
-import logo from '../assets/favicon.svg';
+import BrandLogo from './BrandLogo';
 
 export default function Example() {
     return (
         <footer className="px-6 md:px-16 lg:px-24 xl:px-25 pt-8 w-full text-gray-500">
             <div className="flex flex-col md:flex-row justify-between w-full gap-10 border-b border-gray-500/30 pb-6">
                 <div className="md:max-w-96">
-                    <img className="w-25 md:w-24" src={logo} alt="Logo" />
+                    <BrandLogo />
                     <p className="mt-6 text-sm">
                         Your all-in-one intelligent companion, blending intuition with technology. Always ready, always adaptive — guiding you with clarity, precision, and a touch of brilliance.
                     </p>
