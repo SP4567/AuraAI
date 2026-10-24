@@ -1,6 +1,6 @@
 import { Protect, useAuth } from '@clerk/clerk-react'
 import { Gem, Key, Sparkles } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import CreationItem from '../components/CreationItem'
 
 const Dashboard = () => {
@@ -9,7 +9,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null)
   const { getToken } = useAuth() // Get Clerk auth token
 
-  const getDashboardData = async () => {
+  const getDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -43,7 +43,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [getToken])
 
   const handleDeleteCreation = async (creationId) => {
     try {
@@ -82,14 +82,14 @@ const Dashboard = () => {
 
   useEffect(() => {
     getDashboardData()
-  }, [])
+  }, [getDashboardData])
   useEffect(() => {
     const interval = setInterval(() => {
       getDashboardData()
     }, 30000) // Fetch every 30 seconds
 
     return () => clearInterval(interval) // Cleanup on unmount
-  }, [])
+  }, [getDashboardData])
 
   if (loading) {
     return (
@@ -100,9 +100,14 @@ const Dashboard = () => {
   }
 
   return (
-    <div className='h-full overflow-y-scroll p-6'>
+    <div className='h-full overflow-y-scroll p-6 sm:p-8'>
+      <div className="mb-7">
+        <p className="text-sm font-medium text-violet-500">Your workspace</p>
+        <h1 className="mt-1 text-2xl sm:text-3xl font-semibold tracking-tight text-slate-800">Welcome back</h1>
+        <p className="mt-1 text-sm text-slate-500">Pick up where your creativity left off.</p>
+      </div>
       <div className='flex justify-start gap-4 flex-wrap'>
-        <div className='flex justify-between items-center w-72 p-4 px-6 bg-white rounded-xl border border-gray-200'>
+        <div className='flex justify-between items-center w-72 p-5 px-6 bg-white rounded-2xl border border-gray-200 shadow-sm'>
           <div className='text-slate-600'>
             <p className='text-sm'>Total Creation</p>
             <h2 className='text-xl font-semibold'>{creations.length}</h2>
@@ -111,7 +116,7 @@ const Dashboard = () => {
             <Sparkles className='w-5 text-white'/>
           </div>
         </div>
-        <div className='flex justify-between items-center w-72 p-4 px-6 bg-white rounded-xl border border-gray-200'>
+        <div className='flex justify-between items-center w-72 p-5 px-6 bg-white rounded-2xl border border-gray-200 shadow-sm'>
           <div className='text-slate-600'>
             <p className='text-sm'>Active Plan</p>
             <h2 className='text-xl font-semibold'>
@@ -125,7 +130,7 @@ const Dashboard = () => {
       </div>
       
       <div className='space-y-3'>
-        <p className='mt-6 mb-4'>Recent Creations</p>
+        <p className='mt-8 mb-4 text-lg font-semibold tracking-tight'>Recent Creations</p>
         {error && (
           <div className='text-red-500 text-sm mb-4'>
             Error loading creations: {error}

@@ -3,7 +3,7 @@ import BrandLogo from './BrandLogo';
 export default function Example() {
     return (
         <footer className="px-6 md:px-16 lg:px-24 xl:px-25 pt-8 w-full text-gray-500">
-            <div className="flex flex-col md:flex-row justify-between w-full gap-10 border-b border-gray-500/30 pb-6">
+            <div className="flex flex-col md:flex-row justify-between w-full gap-10 border-b border-[var(--border-color)] pb-6">
                 <div className="md:max-w-96">
                     <BrandLogo />
                     <p className="mt-6 text-sm">
@@ -33,7 +33,7 @@ export default function Example() {
                 </div>
             </div>
             <p className="pt-4 text-center text-xs md:text-sm pb-5">
-                Copyright 2025 © <a href="https://prebuiltui.com">AuraAI</a>. All Right Reserved.
+                Copyright {new Date().getFullYear()} © <a href="https://prebuiltui.com">AuraAI</a>. All Rights Reserved.
             </p>
         </footer>
     );

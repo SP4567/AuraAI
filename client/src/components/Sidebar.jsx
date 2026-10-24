@@ -36,7 +36,7 @@ const Sidebar = ({ sidebar, setSidebar }) => {
 
   return (
     <div
-      className={`w-60 bg-white border-r border-gray-200 flex flex-col justify-between items-center max-sm:absolute top-14 bottom-0 
+      className={`z-20 w-60 h-full overflow-y-auto bg-white border-r border-gray-200 flex flex-col justify-between items-center max-sm:absolute top-16 bottom-0
         ${sidebar ? 'translate-x-0' : 'max-sm:-translate-x-full'} 
         transition-all duration-300 ease-in-out`}
     >
@@ -53,21 +53,21 @@ const Sidebar = ({ sidebar, setSidebar }) => {
 
       {/* Nav Links */}
       <div className="flex flex-col w-full px-3 gap-1">
-        {navItems.map(({ to, label, Icon }) => (
+        {navItems.map(({ to, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/ai'}
             onClick={() => setSidebar(false)}
             className={({ isActive }) =>
-              `px-3.5 py-4 flex items-center gap-3 rounded transition-colors ${
+              `px-3.5 py-3 flex items-center gap-3 rounded-xl transition-colors ${
                 isActive
                   ? 'bg-gradient-to-r from-[#3C81F6] to-[#9234EA] text-white'
                   : 'text-gray-700 hover:bg-gray-100'
               }`
             }
           >
-            <Icon className="w-4 h-4" />
+            <item.Icon className="w-4 h-4" />
             {label}
           </NavLink>
         ))}

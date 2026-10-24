@@ -7,7 +7,7 @@ import Footer from "../components/Footer";
 
 const Home = () => {
   return (
-    <div className="bg-[url('/blue-pink-halftone-background_53876-99004.jpg')] bg-cover bg-no-repeat bg-fixed min-h-screen">
+    <div className="marketing-shell min-h-screen">
       <Navbar />
       <Hero />
       <AiTools />

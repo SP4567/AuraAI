@@ -8,12 +8,186 @@
 @theme{
   --color-primary: #5044E5;
 }
-/* 
-body{
-  background-image: url('/assets/background.jpg');
-  background-size: cover;
-  background-repeat: no-repeat;
-} */
+
+:root {
+  color-scheme: light;
+  --page-bg: #f5f6fb;
+  --surface-bg: #ffffff;
+  --surface-muted: #f8f9fd;
+  --nav-bg: rgb(255 255 255 / 82%);
+  --text-primary: #171a2b;
+  --text-secondary: #667085;
+  --border-color: #e6e8f0;
+  --input-bg: #ffffff;
+  --hero-glow: rgb(99 102 241 / 12%);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --page-bg: #0d1020;
+  --surface-bg: #15192b;
+  --surface-muted: #1b2035;
+  --nav-bg: rgb(15 18 33 / 86%);
+  --text-primary: #f3f4fb;
+  --text-secondary: #a5abc0;
+  --border-color: #2a3047;
+  --input-bg: #111528;
+  --hero-glow: rgb(124 58 237 / 18%);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text-primary);
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.marketing-shell {
+  color: var(--text-primary);
+  background:
+    radial-gradient(ellipse at 50% 8%, var(--hero-glow), transparent 42%),
+    var(--page-bg);
+}
+
+.hero-shell {
+  background:
+    radial-gradient(ellipse at 50% 42%, var(--hero-glow), transparent 56%),
+    var(--page-bg);
+}
+
+.hero-eyebrow,
+.section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface-bg);
+  padding: 0.45rem 0.85rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.hero-description {
+  color: var(--text-secondary);
+  margin-top: 1.25rem;
+}
+
+.hero-secondary-button {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  background: var(--surface-bg);
+}
+
+.surface-card {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  background: var(--surface-bg);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: var(--surface-bg);
+  padding: 0 0.85rem;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.theme-toggle:hover {
+  border-color: #a5a0f5;
+  transform: translateY(-1px);
+}
+
+.theme-toggle svg {
+  width: 1rem;
+  height: 1rem;
+  color: #6d5efc;
+}
+
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] [class~="bg-[#FDFDFE]"],
+html[data-theme="dark"] .bg-gray-50,
+html[data-theme="dark"] .bg-gray-100 {
+  background-color: var(--surface-bg) !important;
+}
+
+html[data-theme="dark"] .text-gray-900,
+html[data-theme="dark"] .text-gray-800,
+html[data-theme="dark"] .text-gray-700,
+html[data-theme="dark"] .text-slate-800,
+html[data-theme="dark"] .text-slate-700,
+html[data-theme="dark"] .text-slate-600,
+html[data-theme="dark"] .text-slate-950 {
+  color: var(--text-primary) !important;
+}
+
+html[data-theme="dark"] .text-gray-600,
+html[data-theme="dark"] .text-gray-500,
+html[data-theme="dark"] .text-slate-500,
+html[data-theme="dark"] .text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+html[data-theme="dark"] .border-gray-100,
+html[data-theme="dark"] .border-gray-200,
+html[data-theme="dark"] .border-gray-300,
+html[data-theme="dark"] .border-gray-500\/30 {
+  border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] input:not([type="checkbox"]),
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  color: var(--text-primary);
+  background-color: var(--input-bg);
+  border-color: var(--border-color);
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+html[data-theme="dark"] hr {
+  border-color: var(--border-color);
+}
+
+html[data-theme="dark"] .hover\:bg-gray-100:hover {
+  background-color: var(--surface-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 @keyframes marquee-scroll {
   0% {
