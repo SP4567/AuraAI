@@ -14,6 +14,48 @@ const AI = new OpenAI({
 
 const NEMOTRON_MODEL = process.env.NEMOTRON_MODEL || "nvidia/nemotron-3.5-super-vl-120b-a12b";
 
+/**
+ * Extracts pure, final user-facing content from NVIDIA Nemotron completions,
+ * prevents leaking raw internal chain-of-thought (reasoning_content), and formats token usage.
+ */
+const extractAiOutput = (aiResponse, fallbackMessage = "AI service did not return content.") => {
+  const choice = aiResponse?.choices?.[0];
+  const msg = choice?.message;
+  let content = msg?.content || "";
+
+  // Strip any <think> or <thought> tags if model emitted them in content
+  if (typeof content === "string") {
+    content = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    content = content.replace(/<thought>[\s\S]*?<\/thought>/gi, "").trim();
+  }
+
+  // If content is empty because reasoning consumed the entire token limit
+  if (!content) {
+    if (choice?.finish_reason === "length") {
+      console.warn("⚠️ Token budget was exhausted during reasoning phase.");
+      throw new Error("Generation reached token limit during reasoning. Please try with a more focused prompt.");
+    }
+    // If finish_reason was stop but content was somehow in reasoning_content
+    if (msg?.reasoning_content) {
+      console.warn("⚠️ Content was empty; using trimmed reasoning_content as fallback.");
+      content = msg.reasoning_content.trim();
+    }
+  }
+
+  if (!content) {
+    throw new Error(fallbackMessage);
+  }
+
+  const usage = aiResponse?.usage ? {
+    prompt_tokens: aiResponse.usage.prompt_tokens || 0,
+    completion_tokens: aiResponse.usage.completion_tokens || 0,
+    total_tokens: aiResponse.usage.total_tokens || 0,
+    reasoning_tokens: aiResponse.usage.completion_tokens_details?.reasoning_tokens || 0
+  } : null;
+
+  return { content, usage };
+};
+
 export const generateArticle = async (req, res) => {
   try {
     const { userId } = req.auth(); // ✅ fixed
@@ -29,14 +71,25 @@ export const generateArticle = async (req, res) => {
       });
     }
 
+    // Provide generous token budget so Nemotron's internal reasoning (~800-1200 tokens)
+    // does not starve or cut off the actual finished article
+    const targetLengthTokens = Math.max(Number(length) || 1200, 1000);
+    const maxTokensBudget = targetLengthTokens + 2500;
+
     const aiResponse = await AI.chat.completions.create({
       model: NEMOTRON_MODEL,
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional article writer and editor. Output only the finished, publication-ready article directly in clean Markdown format with headers and sections. Do not include internal planning outlines, meta-commentary, or chain-of-thought in your final output."
+        },
+        { role: "user", content: prompt }
+      ],
       temperature: 0.7,
-      max_tokens: Number(length) || 1000
+      max_tokens: maxTokensBudget
     });
 
-    const content = aiResponse.choices[0]?.message?.content || aiResponse.choices[0]?.message?.reasoning_content;
+    const { content, usage } = extractAiOutput(aiResponse, "Failed to generate article content.");
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type) 
@@ -51,7 +104,7 @@ export const generateArticle = async (req, res) => {
       });
     }
 
-    res.json({ success: true, content });
+    res.json({ success: true, content, usage });
   } catch (error) {
     console.log(error.message);
     res.json({ success: false, message: error.message });
@@ -73,14 +126,21 @@ export const generateBlogTitle = async (req, res) => {
       });
     }
 
+    // Increase budget from 150 to 2048 to prevent reasoning from exhausting the token limit
     const aiResponse = await AI.chat.completions.create({
       model: NEMOTRON_MODEL,
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        {
+          role: "system",
+          content: "You are a professional copywriter. Generate catchy, high-CTR blog titles formatted directly as a numbered Markdown list. Output the titles directly without internal scratchpad planning or meta-commentary."
+        },
+        { role: "user", content: prompt }
+      ],
       temperature: 0.7,
-      max_tokens: 150
+      max_tokens: 2048
     });
 
-    const content = aiResponse.choices[0]?.message?.content || aiResponse.choices[0]?.message?.reasoning_content;
+    const { content, usage } = extractAiOutput(aiResponse, "Failed to generate blog titles.");
 
     await sql`
       INSERT INTO creations (user_id, prompt, content, type) 
@@ -95,7 +155,7 @@ export const generateBlogTitle = async (req, res) => {
       });
     }
 
-    res.json({ success: true, content });
+    res.json({ success: true, content, usage });
   } catch (error) {
     console.log(error.message);
     res.json({ success: false, message: error.message });
@@ -451,12 +511,18 @@ ${pdfText}`;
 
       const aiResponse = await AI.chat.completions.create({
         model: NEMOTRON_MODEL,
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          {
+            role: "system",
+            content: "You are an executive talent recruiter and resume auditor. Provide a structured, comprehensive evaluation covering strengths, critical gaps, ATS optimization tips, and an updated section rewrite in clean Markdown without internal planning notes."
+          },
+          { role: "user", content: prompt }
+        ],
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 5000
       });
 
-      const content = aiResponse.choices[0]?.message?.content || aiResponse.choices[0]?.message?.reasoning_content;
+      const { content, usage } = extractAiOutput(aiResponse, "Failed to analyze resume.");
       console.log('✅ AI response received, length:', content.length);
 
       // Step 8: Save to database
@@ -470,7 +536,8 @@ ${pdfText}`;
       console.log('🎉 Resume review completed successfully!');
       return res.json({ 
         success: true, 
-        content
+        content,
+        usage
       });
 
     } catch (aiError) {
@@ -540,16 +607,18 @@ export const generatePrescription = async (req, res) => {
 
     const aiResponse = await AI.chat.completions.create({
       model: NEMOTRON_MODEL,
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        {
+          role: "system",
+          content: "You are Clinica, an AI health wellness advisor. Output structured health observations, recovery guidance, and doctor directories in clean Markdown without internal meta-commentary."
+        },
+        { role: "user", content: prompt }
+      ],
       temperature: 0.7,
-      max_tokens: 2000
+      max_tokens: 4000
     });
 
-    // Defensive check
-    const content = aiResponse.choices[0]?.message?.content || aiResponse.choices[0]?.message?.reasoning_content;
-    if (!content) {
-      return res.json({ success: false, message: "AI returned empty response" });
-    }
+    const { content, usage } = extractAiOutput(aiResponse, "AI returned empty response");
 
     // Save to DB
     await sql`
@@ -563,7 +632,7 @@ export const generatePrescription = async (req, res) => {
       });
     }
 
-    return res.json({ success: true, content });
+    return res.json({ success: true, content, usage });
   } catch (error) {
     console.error("Prescription error:", error);
     return res.json({ success: false, message: error.message || "Server Error" });

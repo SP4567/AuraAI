@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Copy, Download, RotateCcw, Sparkles, Stethoscope } from 'lucide-react';
+import { AlertTriangle, Check, Copy, Download, RotateCcw, Sparkles, Stethoscope, Zap } from 'lucide-react';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import Markdown from 'react-markdown';
@@ -18,6 +18,7 @@ const HealthAssistant = () => {
   const [healthIssue, setHealthIssue] = useState('');
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
+  const [usage, setUsage] = useState(null);
   const [copied, setCopied] = useState(false);
   const { getToken } = useAuth();
 
@@ -62,6 +63,7 @@ const HealthAssistant = () => {
 
       if (data.success) {
         setContent(data.content);
+        if (data.usage) setUsage(data.usage);
         toast.success("Health advisory generated!");
       } else {
         toast.error(data.message || "Failed to generate response");
@@ -107,6 +109,7 @@ const HealthAssistant = () => {
     setLocation('');
     setHealthIssue('');
     setContent('');
+    setUsage(null);
   };
 
   return (
@@ -273,6 +276,16 @@ const HealthAssistant = () => {
             </div>
           )}
         </div>
+
+        {content && usage && (
+          <div className="py-2 border-b border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>Clinical Wellness Protocol</span>
+            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-cyan-800 bg-cyan-50 border border-cyan-200/80 px-2 py-0.5 rounded-md">
+              <Zap className="w-3 h-3 text-cyan-600" />
+              <span>{usage.total_tokens.toLocaleString()} tokens ({usage.completion_tokens - usage.reasoning_tokens} output + {usage.reasoning_tokens} reasoning)</span>
+            </div>
+          </div>
+        )}
 
         {!content ? (
           <div className="flex-1 flex justify-center items-center">

@@ -1,4 +1,4 @@
-import { Check, Copy, Edit, Hash, RotateCcw, Sparkles } from 'lucide-react'
+import { Check, Copy, Edit, Hash, RotateCcw, Sparkles, Zap } from 'lucide-react'
 import React, { useState } from 'react'
 import toast from 'react-hot-toast';
 import Markdown from 'react-markdown';
@@ -14,6 +14,7 @@ const BlogTitles = () => {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [content, setContent] = useState('')
+  const [usage, setUsage] = useState(null)
   const [copied, setCopied] = useState(false)
   const { getToken } = useAuth()
 
@@ -29,6 +30,7 @@ const BlogTitles = () => {
       );
       if (data.success) {
         setContent(data.content);
+        if (data.usage) setUsage(data.usage);
         toast.success('Titles generated successfully!');
       } else {
         toast.error(data.message);
@@ -55,6 +57,7 @@ const BlogTitles = () => {
   const resetForm = () => {
     setInput('');
     setContent('');
+    setUsage(null);
     setSelectedCategory('General');
   };
 
@@ -123,7 +126,7 @@ const BlogTitles = () => {
 
       {/* Generated Titles Display */}
       <div className="w-full max-w-lg p-5 bg-white rounded-xl flex flex-col border border-gray-200 shadow-sm min-h-[420px] max-h-[700px]">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-gray-100 pb-3">
           <div className="flex items-center gap-2.5">
             <Edit className="w-5 h-5 text-[#8E37EB]" />
             <h1 className="text-xl font-semibold">Generated Titles</h1>
@@ -138,6 +141,16 @@ const BlogTitles = () => {
             </button>
           )}
         </div>
+
+        {content && usage && (
+          <div className="py-2 border-b border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>5 titles generated</span>
+            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-700 bg-purple-50 border border-purple-200/80 px-2 py-0.5 rounded-md">
+              <Zap className="w-3 h-3 text-purple-500" />
+              <span>{usage.total_tokens.toLocaleString()} tokens ({usage.completion_tokens - usage.reasoning_tokens} output + {usage.reasoning_tokens} reasoning)</span>
+            </div>
+          </div>
+        )}
 
         {!content ? (
           <div className="flex-1 flex justify-center items-center">

@@ -1,4 +1,4 @@
-import { Check, Copy, Download, Edit, RotateCcw, Sparkles } from 'lucide-react';
+import { Check, Copy, Download, Edit, RotateCcw, Sparkles, Zap } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '@clerk/clerk-react';
@@ -18,6 +18,7 @@ const WriteArticle = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
+  const [usage, setUsage] = useState(null);
   const [copied, setCopied] = useState(false);
   const { getToken } = useAuth();
 
@@ -39,6 +40,7 @@ const WriteArticle = () => {
       );
       if (data.success) {
         setContent(data.content);
+        if (data.usage) setUsage(data.usage);
         toast.success('Article generated successfully!');
       } else {
         toast.error(data.message || 'Failed to generate article');
@@ -79,6 +81,7 @@ const WriteArticle = () => {
   const resetForm = () => {
     setInput('');
     setContent('');
+    setUsage(null);
     setSelectedLength(articleLength[0]);
   };
 
@@ -185,12 +188,24 @@ const WriteArticle = () => {
         </div>
 
         {content && (
-          <div className="py-2.5 flex items-center gap-4 text-xs text-gray-500 border-b border-gray-100">
-            <span>{stats.words} words</span>
-            <span>•</span>
-            <span>{stats.characters} chars</span>
-            <span>•</span>
-            <span>~{stats.readingMinutes} min read</span>
+          <div className="py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <span>{stats.words} words</span>
+              <span>•</span>
+              <span>{stats.characters} chars</span>
+              <span>•</span>
+              <span>~{stats.readingMinutes} min read</span>
+            </div>
+
+            {usage && (
+              <div 
+                title={`Prompt tokens: ${usage.prompt_tokens} | Output tokens: ${usage.completion_tokens - usage.reasoning_tokens} | Reasoning tokens: ${usage.reasoning_tokens}`}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md"
+              >
+                <Zap className="w-3 h-3 text-indigo-500" />
+                <span>{usage.total_tokens.toLocaleString()} tokens ({usage.completion_tokens - usage.reasoning_tokens} output + {usage.reasoning_tokens} reasoning)</span>
+              </div>
+            )}
           </div>
         )}
 

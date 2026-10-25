@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Brain, BookOpen, Check, Copy, Download, RotateCcw, Sparkles } from "lucide-react";
+import { Brain, BookOpen, Check, Copy, Download, RotateCcw, Sparkles, Zap } from "lucide-react";
 import Markdown from "react-markdown";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -11,6 +11,7 @@ const StudyAssistant = () => {
   const [input, setInput] = useState("");
   const [selectedMode, setSelectedMode] = useState("Q&A");
   const [content, setContent] = useState("");
+  const [usage, setUsage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const { getToken } = useAuth();
@@ -45,6 +46,7 @@ const StudyAssistant = () => {
 
       if (data.success) {
         setContent(data.content.trim());
+        if (data.usage) setUsage(data.usage);
         toast.success("Study material generated!");
       } else {
         toast.error(data.message || "Failed to generate study content");
@@ -85,6 +87,7 @@ const StudyAssistant = () => {
   const resetForm = () => {
     setInput("");
     setContent("");
+    setUsage(null);
     setSelectedMode("Q&A");
   };
 
@@ -195,6 +198,16 @@ const StudyAssistant = () => {
             </div>
           )}
         </div>
+
+        {content && usage && (
+          <div className="py-2 border-b border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>{selectedMode} Generated</span>
+            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md">
+              <Zap className="w-3 h-3 text-blue-600" />
+              <span>{usage.total_tokens.toLocaleString()} tokens ({usage.completion_tokens - usage.reasoning_tokens} output + {usage.reasoning_tokens} reasoning)</span>
+            </div>
+          </div>
+        )}
 
         {!content ? (
           <div className="flex-1 flex justify-center items-center">

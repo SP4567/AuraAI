@@ -1,4 +1,4 @@
-import { Check, Copy, Download, FileText, RotateCcw, Sparkles, UploadCloud } from 'lucide-react'
+import { Check, Copy, Download, FileText, RotateCcw, Sparkles, UploadCloud, Zap } from 'lucide-react'
 import React, { useState } from 'react'
 import axios from 'axios'
 import { useAuth } from '@clerk/clerk-react';
@@ -11,6 +11,7 @@ const ReviewResume = () => {
   const [input, setInput] = useState(null);
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
+  const [usage, setUsage] = useState(null);
   const [copied, setCopied] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const { getToken } = useAuth();
@@ -62,12 +63,13 @@ const ReviewResume = () => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         },
-        timeout: 60000,
+        timeout: 90000,
       });
 
       const { data } = response;
       if (data.success) {
         setContent(data.content);
+        if (data.usage) setUsage(data.usage);
         toast.success('Resume analyzed successfully!');
       } else {
         toast.error(data.message || 'Failed to analyze resume');
@@ -108,6 +110,7 @@ const ReviewResume = () => {
   const resetForm = () => {
     setInput(null);
     setContent('');
+    setUsage(null);
   };
 
   return (
@@ -209,6 +212,16 @@ const ReviewResume = () => {
             </div>
           )}
         </div>
+
+        {content && usage && (
+          <div className="py-2 border-b border-gray-100 flex items-center justify-between text-xs text-gray-500">
+            <span>ATS Comprehensive Audit</span>
+            <div className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">
+              <Zap className="w-3 h-3 text-teal-600" />
+              <span>{usage.total_tokens.toLocaleString()} tokens ({usage.completion_tokens - usage.reasoning_tokens} output + {usage.reasoning_tokens} reasoning)</span>
+            </div>
+          </div>
+        )}
 
         {!content ? (
           <div className='flex-1 flex justify-center items-center'>
