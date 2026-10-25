@@ -12,20 +12,24 @@ import ReviewResume from './pages/ReviewResume.jsx'
 import HealthAssistant from './pages/HealthAssistant.jsx'
 import StudyAssistant from './pages/StudyAssistant.jsx'
 import Community from './pages/Community.jsx'
-import { useAuth } from '@clerk/clerk-react'
-import { useEffect } from 'react'
-import {Toaster} from 'react-hot-toast'
-
+import { Toaster } from 'react-hot-toast'
 
 const App = () => {
-  const {getToken} = useAuth()
-  useEffect(()=>{
-    getToken().then((token)=>console.log(token))
-  }, [])
-  
   return (
     <div>
-      <Toaster />
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          duration: 3500,
+          style: {
+            borderRadius: '10px',
+            background: 'var(--surface-bg)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-color)',
+            fontSize: '13px',
+          },
+        }}
+      />
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/ai' element={<Layout />}>
@@ -44,4 +48,5 @@ const App = () => {
     </div>
   )
 }
+
 export default App;

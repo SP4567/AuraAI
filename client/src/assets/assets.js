@@ -75,7 +75,7 @@ export const AiToolsData = [
         description: 'Your personalized study companion to organize, learn, and stay focused. Powered by AI to boost productivity and mastery.',
         Icon: Book,
         bg: { from: '#22c55e', to: '#06b6d4' },
-        path: '/ai/Study-assistant'
+        path: '/ai/study-assistant'
     },
 
 ]

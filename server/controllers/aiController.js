@@ -8,7 +8,7 @@ import FormData from "form-data";
 import pdf from 'pdf-parse';
 
 const AI = new OpenAI({
-  apiKey: process.env.NVIDIA_API_KEY || process.env.NEMOTRON_API_KEY || "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",
+  apiKey: process.env.NVIDIA_API_KEY || process.env.NEMOTRON_API_KEY,
   baseURL: process.env.NVIDIA_BASE_URL || process.env.NEMOTRON_BASE_URL || "https://integrate.api.nvidia.com/v1"
 });
 
@@ -232,6 +232,15 @@ export const removeImageBackground = async (req, res) => {
   } catch (error) {
     console.error('💥 Error in removeImageBackground:', error);
     res.json({ success: false, message: error.message });
+  } finally {
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+        console.log('🧹 Cleaned up temporary upload:', req.file.path);
+      } catch (cleanupErr) {
+        console.error('Cleanup error:', cleanupErr.message);
+      }
+    }
   }
 };
 
@@ -295,6 +304,15 @@ export const removeImageObject = async (req, res) => {
         ? "The specified object couldn't be removed. Try being more specific." 
         : "Image processing failed. Please try again."
     });
+  } finally {
+    if (req.file?.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+        console.log('🧹 Cleaned up temporary upload:', req.file.path);
+      } catch (cleanupErr) {
+        console.error('Cleanup error:', cleanupErr.message);
+      }
+    }
   }
 };
 export const reviewResume = async (req, res) => {

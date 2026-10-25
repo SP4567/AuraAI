@@ -1,192 +1,187 @@
 # AuraAI 🌌
 
-*All-in-one fullstack AI application — your intelligent companion at the intersection of front-end, back-end, and brainy models.*
+> **The All-in-One Fullstack Generative AI Suite** — Seamlessly uniting multimodal language models, visual AI synthesis, neural image processing, community sharing, and SaaS subscription orchestration in one enterprise-ready codebase.
 
 ---
 
-## 🚀 Table of Contents
+## 🚀 Overview
 
-1. [About](#about)  
-2. [Features](#features)  
-3. [Architecture](#architecture)  
-4. [Getting Started](#getting-started)  
-   - [Prerequisites](#prerequisites)  
-   - [Installation](#installation)  
-   - [Running Locally](#running-locally)  
-5. [Environment Variables / Configuration](#environment-variables--configuration)  
-6. [Usage](#usage)  
-7. [Folder Structure](#folder-structure)  
-8. [Roadmap & Future Plans](#roadmap--future-plans)  
-9. [Contributing](#contributing)  
-10. [License](#license)  
-11. [Acknowledgements](#acknowledgements)  
+**AuraAI** provides a cohesive, end-to-end creative workspace offering nine specialized AI capabilities:
+
+1. **✍️ AI Article Writer** — Generates structured, comprehensive articles with customizable lengths, live word-count analytics, one-click clipboard copying, and `.md` export.
+2. **🏷️ Blog Title Generator** — High-CTR, catchy title ideation across 8 distinct content verticals with rationale breakdowns.
+3. **🎨 AI Image Generation** — Text-to-image synthesis powered by ClipDrop & Cloudinary, supporting artistic styles (Realistic, Ghibli, Anime, Cyberpunk, 3D Render, Oil Painting) and community feed publishing.
+4. **✂️ Background Removal** — Automated foreground cutout extraction with transparent PNG exports.
+5. **🪄 Object Removal** — Targeted inpainting and unwanted object erasure (`e_gen_remove`).
+6. **📄 AI Resume Reviewer** — PDF resume extraction (`pdf-parse`) and deep ATS-oriented auditing, strength scoring, and section rewrites.
+7. **🩺 Clinica (Health Assistant)** — Personalized symptom guidance, lifestyle wellness protocols, and local healthcare provider directory.
+8. **📚 Study Assistant** — Dynamic educational deck generation supporting practice Q&As, flashcards, and notes summarization.
+9. **🌐 Community Showcase** — Collaborative public gallery to browse, inspect, and like creations shared by creators across the platform.
 
 ---
 
-## 🧠 About
-
-AuraAI is a fullstack platform built to unify front-end UI, back-end services, and AI capabilities (e.g. LLMs, embeddings, agents). It’s designed as a modular, extensible foundation so you can plug & play AI features while maintaining sanity in your codebase.
-
-Live demo / deployment: [aura-ai-server-one.vercel.app](https://aura-ai-server-one.vercel.app) *(if maintained)* :contentReference[oaicite:0]{index=0}
-
----
-
-## ✨ Features
-
-Here’s what AuraAI aims to offer (or already offers):
-
-- Modular architecture: front end + back end + AI models all in one  
-- API routing, authentication, user session logic  
-- Integration with language models (OpenAI, etc.)  
-- Embedding store / vector DB (optional)  
-- Agent / tool framework support  
-- Logging, error handling, monitoring hooks  
-- Real-time / websocket support (future)  
-- Extensibility: plugin your own modules or models  
-
----
-
-## 🏗 Architecture
+## 🏗️ Technical Architecture
 
 ```
-
-[ Client / Frontend ]  ↔  [ Server / API Layer ]  ↔  [ AI / Model / DB Layer ]
-
-````
-
-- **Client** (in `client/`) — UI, state management, request orchestration  
-- **Server** (in `server/`) — API endpoints, orchestration, model calls, business logic  
-- **AI / Model Layer** — embedding store, calling LLMs, agent logic, etc.
-
-You can swap or upgrade any part without rewriting the rest.
+[ Frontend: React 19 + Vite 7 + Tailwind 4 ]
+                 ↕ (Clerk JWT + Axios)
+[ Backend: Node.js + Express 5.1 ]
+   ├── Clerk Middleware (Auth & Subscription Tier Guard)
+   ├── Multer (Streamlined in-flight file processing & disk cleanup)
+   └── API Handlers (/api/ai, /api/user)
+                 ↕
+[ AI Engines & Infrastructure ]
+   ├── NVIDIA Nemotron 3.5 Super VL (OpenAI-compatible endpoints)
+   ├── Cloudinary AI & ClipDrop API (Image synthesis & transformations)
+   └── Neon Serverless PostgreSQL (Creations & Social Graph)
+```
 
 ---
 
-## 🛠 Getting Started
+## 🛠️ Getting Started
 
 ### Prerequisites
 
-Make sure you have:
+- **Node.js** `>= 18.x`
+- **npm** or **yarn**
+- **Neon PostgreSQL** account & connection URI
+- **Clerk** account (Publishable Key + Secret Key)
+- **NVIDIA Developer Key** (or Nemotron NIM endpoint)
+- **Cloudinary** account (Cloud Name, API Key, API Secret)
+- **ClipDrop API Key** (for image synthesis)
 
-- Node.js (>= 16.x or your chosen version)  
-- npm or yarn  
-- (Optional) A cloud hosting / deployment setup  
-- API keys for LLM / AI provider (e.g. OpenAI)  
-- (If using embeddings vector DB) credentials or local instance  
+---
 
 ### Installation
 
 ```bash
-# Clone the repo
+# Clone the repository
 git clone https://github.com/SP4567/AuraAI.git
 cd AuraAI
 
-# Install dependencies in both server & client
-cd server && npm install
-cd ../client && npm install
-````
+# Install backend dependencies
+cd server
+npm install
+
+# Install frontend dependencies
+cd ../client
+npm install
+```
+
+---
+
+### Environment Setup
+
+#### Server Configuration (`server/.env`):
+```env
+PORT=5000
+
+# NVIDIA Nemotron Inference
+NVIDIA_API_KEY=nvapi-...
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1
+NEMOTRON_MODEL=nvidia/nemotron-3.5-super-vl-120b-a12b
+
+# Neon PostgreSQL
+DATABASE_URL=postgresql://user:password@ep-...neon.tech/neondb?sslmode=require
+
+# Clerk Authentication
+CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# Cloudinary Media
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+
+# ClipDrop API
+CLIPDROP_API_KEY=...
+```
+
+#### Client Configuration (`client/.env`):
+```env
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+VITE_BASE_URL=http://localhost:5000/
+```
+
+---
+
+### Database Initialization
+
+Execute the schema script located at `server/configs/schema.sql` inside your Neon database console or psql terminal:
+
+```sql
+CREATE TABLE IF NOT EXISTS creations (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) NOT NULL,
+    prompt TEXT NOT NULL,
+    content TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    publish BOOLEAN DEFAULT FALSE,
+    likes TEXT[] DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_creations_user_id ON creations (user_id);
+CREATE INDEX IF NOT EXISTS idx_creations_publish ON creations (publish);
+CREATE INDEX IF NOT EXISTS idx_creations_created_at ON creations (created_at DESC);
+```
+
+---
 
 ### Running Locally
 
-Open two terminal tabs/windows:
+Run both client and server in separate terminal sessions:
 
 ```bash
-# In server folder
+# Terminal 1: Backend
 cd server
-npm run dev   # or whatever your start script is
+npm run server
 
-# In client folder
+# Terminal 2: Frontend
 cd client
 npm run dev
 ```
 
-Then open your browser to `http://localhost:5000` (or your configured port).
+Visit `http://localhost:5173` in your browser.
 
 ---
 
-## ⚙ Environment Variables / Configuration
+## 📁 Repository Structure
 
-Create a `.env` (or `.env.local`) file (in server and/or client as needed). Example variables:
-
-# In server/.env
-OPENAI_API_KEY=your_openai_key
-MODEL_PROVIDER_URL=...
-DB_URL=...
-EMBEDDING_KEY=...
-
-# In client/.env
-NEXT_PUBLIC_API_ENDPOINT=http://localhost:3000/api
-
-Adjust according to your setup.
-
----
-
-## 🎯 Usage
-
-Once up and running, you can:
-
-* Authenticate / login (if built)
-* Send prompts / queries to the AI
-* Use embedding-based retrieval & reasoning
-* Extend with new tools or modules
-* Monitor logs, errors, performance
-* Deploy to production (Vercel, AWS, etc.)
-
-You might want to include screenshots or GIFs here in future.
-
----
-
-## 📁 Folder Structure
-
-Here’s a sample (adjust to your actual) layout:
-
+```
 AuraAI/
-├── client/              # Frontend app (React / Next.js / etc.)
-│   ├── pages/
-│   ├── components/
-│   └── ...
-├── server/              # Backend / API / business logic
-│   ├── api/
-│   ├── services/
-│   ├── models/
-│   └── ...
-├── README.md  
-└── .gitignore  
+├── client/
+│   ├── src/
+│   │   ├── assets/         # Brand logos, icons, tool metadata
+│   │   ├── components/     # Navbar, Sidebar, Hero, CreationItem, ThemeToggle
+│   │   ├── context/        # Theme provider & hooks
+│   │   ├── pages/          # 9 Tool interfaces, Dashboard, Community, Home
+│   │   ├── App.jsx         # Routing & notification toasts
+│   │   └── main.jsx        # Clerk & router providers
+│   ├── eslint.config.js    # Strict linting config
+│   ├── vite.config.js      # Vite 7 build configuration
+│   └── package.json
+├── server/
+│   ├── configs/            # DB client, Cloudinary, Multer, schema.sql
+│   ├── controllers/        # AI orchestration & user data controllers
+│   ├── middlewares/        # Clerk authentication & plan checks
+│   ├── routes/             # /api/ai & /api/user routing
+│   ├── server.js           # Express app bootstrap
+│   └── package.json
+└── README.md
+```
 
 ---
 
-## 🚧 Roadmap & Future Plans
+## 🔒 Security & Best Practices
 
-* 🔧 Add WebSocket / real-time features
-* 🧩 Plugin system (extension marketplace)
-* 🔐 Full auth & user permissions
-* 📊 Dashboard / analytics
-* ☁️ One-click deploy / CI/CD
-* 🧠 Fine-tuning & model switching support
-
----
-
-## 🤝 Contributing
-
-You’re welcome to contribute — code, docs, tests, ideas. Here’s how:
-
-1. Fork the repo
-2. Create a branch: `feature/your-thing`
-3. Make changes & add tests
-4. Submit a pull request with a clear description
-5. We’ll review, discuss, iterate
-
-Please abide by the repository’s code style, tests, and commit conventions.
+- **Zero-leaked credentials:** Keys are strictly retrieved from environment variables.
+- **Immediate file unlinking:** All temporary disk uploads processed through Multer are automatically cleaned up in `finally` blocks.
+- **Strict linting & build compliance:** Code passes `eslint` with zero warnings and Vite production bundling cleanly.
 
 ---
 
 ## 📜 License
 
-This project is under the **MIT License** (or whichever you prefer). See `LICENSE` file.
-
----
-
-## 🙏 Acknowledgements
-
-* Inspiration / code snippets from various open-source AI fullstack projects
-* Thanks to the open source community & model providers
+This project is licensed under the **MIT License**.

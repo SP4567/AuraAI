@@ -335,7 +335,7 @@ const RemoveObjects = () => {
       </div>
       
       {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && content && (
+      {import.meta.env.DEV && content && (
         <div className='w-full p-4 bg-gray-100 rounded-lg text-xs font-mono'>
           <p><strong>🔍 Debug Info:</strong></p>
           <p>• Image data type: <code>{typeof content}</code></p>
